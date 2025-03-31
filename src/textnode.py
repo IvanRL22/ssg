@@ -1,9 +1,12 @@
 from enum import Enum
 
+from src.htmlnode import LeafNode
+
+
 class TextType(Enum):
-    NORMAL_TEXT = "normal"
-    BOLD_TEXT = "bold"
-    ITALIC_TEXT = "italic"
+    TEXT = "normal"
+    BOLD = "bold"
+    ITALIC = "italic"
     CODE = "code"
     LINK = "link"
     IMAGE = "image"
@@ -20,3 +23,22 @@ class TextNode:
     def __repr__(self):
         return f"TextNode({self.text}, {self.text_type.value}, {self.url})"
 
+
+# TODO Should this function be here or somewhere else?
+def text_node_to_html_node(text_node: TextNode) -> LeafNode:
+
+    match text_node.text_type:
+        case TextType.TEXT:
+            return LeafNode(value=text_node.text, tag=None)
+        case TextType.BOLD:
+            return LeafNode(value=text_node.text, tag="b")
+        case TextType.ITALIC:
+            return LeafNode(value=text_node.text, tag="i")
+        case TextType.CODE:
+            return LeafNode(value=text_node.text, tag="code")
+        case TextType.LINK:
+            return LeafNode(value=text_node.text, tag="a", props={"href":text_node.url})
+        case TextType.IMAGE:
+            return LeafNode(value="", tag="img", props={"src":text_node.url, "alt":text_node.text})
+        case _:
+            raise ValueError(f"Unexpected node type {text_node.text_type}")
