@@ -39,6 +39,6 @@ def text_node_to_html_node(text_node: TextNode) -> LeafNode:
         case TextType.LINK:
             return LeafNode(value=text_node.text, tag="a", props={"href":text_node.url})
         case TextType.IMAGE:
-            return LeafNode(value="", tag="img", props={"src":text_node.url, "alt":text_node.text})
+            return LeafNode(value=None, tag="img", props={"src":text_node.url, "alt":text_node.text})
         case _:
             raise ValueError(f"Unexpected node type {text_node.text_type}")
