@@ -39,6 +39,69 @@ def extract_markdown_images(text):
 
 def extract_markdown_link(text):
     return re.findall(
-        "[^!]\[(.*?)\]\((.*?)\)",
+        "(?:^|[^!])\[(.*?)\]\((.*?)\)",
         text)
 
+def split_nodes_image(old_nodes:list[TextNode]):
+    new_nodes = []
+
+    for node in old_nodes:
+        images = extract_markdown_images(node.text)
+
+        if len(images) == 0:
+            new_nodes.append(node)
+            continue
+
+        text = node.text
+        if text.index(images[0][0]) == 2:  # Deal with nodes starting with an image
+            starting_link = images[0][0]
+            new_nodes.append(
+                TextNode(starting_link, TextType.IMAGE, url=images[0][1])
+            )
+            text = text[text.index(images[0][1]) + len(images[0][1]) + 1:]
+            images = images[1:]
+
+        for match in images:
+            new_nodes.append(
+                TextNode(
+                    text[0:text.index(match[0]) - 2],
+                    TextType.TEXT))
+            new_nodes.append(TextNode(match[0], TextType.IMAGE, url=match[1]))
+            text = text[text.index(match[1]) + len(match[1]) + 1:]
+
+        if len(text) > 0:
+            new_nodes.append(TextNode(text, TextType.TEXT))
+
+    return new_nodes
+
+def split_nodes_link(old_nodes:list[TextNode]):
+    new_nodes = []
+
+    for node in old_nodes:
+        links = extract_markdown_link(node.text)
+
+        if len(links) == 0:
+            new_nodes.append(node)
+            continue
+
+        text = node.text
+        if text.index(links[0][0]) == 1: # Deal with nodes starting with a link
+            starting_link = links[0][0]
+            new_nodes.append(
+                TextNode(starting_link, TextType.LINK, url=links[0][1])
+            )
+            text = text[text.index(links[0][1]) + len(links[0][1]) + 1:]
+            links = links[1:]
+
+        for match in links: # Inside the loop we expect to always start with text
+            new_nodes.append(
+                TextNode(
+                    text[0:text.index(match[0]) - 1],
+                    TextType.TEXT))
+            new_nodes.append(TextNode(match[0], TextType.LINK, url=match[1]))
+            text = text[text.index(match[1]) + len(match[1]) + 1:]
+
+        if len(text) > 0:
+            new_nodes.append(TextNode(text, TextType.TEXT))
+
+    return new_nodes

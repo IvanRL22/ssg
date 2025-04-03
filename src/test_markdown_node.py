@@ -1,6 +1,7 @@
 import unittest
 
-from src.markdown_node import split_nodes_delimiter, extract_markdown_images, extract_markdown_link
+from src.markdown_node import split_nodes_delimiter, extract_markdown_images, extract_markdown_link, split_nodes_image, \
+    split_nodes_link
 from src.textnode import TextNode, TextType
 
 
@@ -101,3 +102,98 @@ class TestMarkdownNode(unittest.TestCase):
             "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)"
         )
         self.assertListEqual([], matches)
+
+    def test_node_starting_with_link(self):
+        matches = extract_markdown_link("[Click here](boot.dev) to learn backend!")
+        self.assertListEqual(matches, [('Click here', 'boot.dev')])
+
+    # --- Test splitting text node with images
+    def test_no_images(self):
+        node = TextNode("This is just a text node, no images, no links", TextType.TEXT)
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(new_nodes, [node])
+
+    def test_split_images(self):
+        node = TextNode(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with an ", TextType.TEXT),
+                TextNode("image", TextType.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
+                TextNode(" and another ", TextType.TEXT),
+                TextNode(
+                    "second image", TextType.IMAGE, "https://i.imgur.com/3elNhQu.png"
+                ),
+            ],
+            new_nodes,
+        )
+
+    def test_split_images_starting_with_image(self):
+        node = TextNode(
+            "![Awesome image init?](https://www.boot.dev/img/bootdev-logo-full-small.webp)Enjoy the logo!",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("Awesome image init?", TextType.IMAGE, "https://www.boot.dev/img/bootdev-logo-full-small.webp"),
+                TextNode("Enjoy the logo!", TextType.TEXT)
+            ],
+            new_nodes
+        )
+
+    # --- Test splitting test node with links
+    def test_no_links(self):
+        node = TextNode("This is just a text node, no images, no links", TextType.TEXT)
+        new_nodes = split_nodes_link([node])
+        self.assertListEqual(new_nodes, [node])
+
+    def test_split_links(self):
+        node = TextNode(
+            "This is text with a [link](https://en.wikipedia.org/wiki/Hyperlink) and another [link](https://en.wikipedia.org/wiki/Link)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_link([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with a ", TextType.TEXT),
+                TextNode("link", TextType.LINK, "https://en.wikipedia.org/wiki/Hyperlink"),
+                TextNode(" and another ", TextType.TEXT),
+                TextNode(
+                    "link", TextType.LINK, "https://en.wikipedia.org/wiki/Link"
+                ),
+            ],
+            new_nodes
+        )
+
+    def test_split_links_starting_with_link(self):
+        node = TextNode(
+            "[Click here](https://www.google.com) to go to google.",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_link([node])
+        self.assertListEqual(
+            [
+                TextNode("Click here", TextType.LINK, "https://www.google.com"),
+                TextNode(" to go to google.", TextType.TEXT)
+            ],
+            new_nodes
+        )
+
+    def test_split_links_starting_and_ending_with_links(self):
+        node = TextNode(
+            "[Click here](https://www.google.com) to go to google. Or you prefer to go to boot.dev, [click here](https://www.boot.dev)",
+            TextType.TEXT,
+        )
+        new_nodes = split_nodes_link([node])
+        self.assertListEqual(
+            [
+                TextNode("Click here", TextType.LINK, "https://www.google.com"),
+                TextNode(" to go to google. Or you prefer to go to boot.dev, ", TextType.TEXT),
+                TextNode("click here", TextType.LINK, "https://www.boot.dev"),
+            ],
+            new_nodes
+        )
