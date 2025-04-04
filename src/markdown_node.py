@@ -33,13 +33,35 @@ def split_nodes_delimiter(old_nodes:list[TextNode], delimiter, text_type):
     return new_nodes
 
 def extract_markdown_images(text):
+    """
+        ! ->            markdown starting character for an image
+        \[ ->           opening bracket
+            (.+?) ->    capture 1 or more characters lazily
+        \] ->           closing bracket
+        \( ->           opening parenthesis
+            (.+?) ->    capture any 1 or more characters lazily
+        \) ->           closing parenthesis
+    """
     return re.findall(
-        "!\[(.*?)\]\((.*?)\)",
+        "!\[(.+?)\]\((.+?)\)",
         text)
 
 def extract_markdown_link(text):
+    """
+    (?: ->          start non-capturing group
+        ^ ->        beginning of the line
+        | ->        or
+        [^!] ->     a character that is not '!', this is to avoid matching markdown images
+     ) ->           close non-capturing group
+     \[ ->          opening bracket
+        (.+?) ->    capture any amount of characters lazily
+    \] ->           closing bracket
+    \( ->           opening parenthesis
+        (.+?) ->    capture any amount of characters lazily
+    \) ->           closing parenthesis
+    """
     return re.findall(
-        "(?:^|[^!])\[(.*?)\]\((.*?)\)",
+        "(?:^|[^!])\[(.+?)\]\((.+?)\)",
         text)
 
 def split_nodes_image(old_nodes:list[TextNode]):
